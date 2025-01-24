@@ -1,68 +1,89 @@
-# Study Assistant
+# AI Study Assistant
 
-A smart study assistant powered by RAG (Retrieval Augmented Generation) that helps students better understand their study materials. This application uses OpenAI's GPT-4 model and embeddings to provide intelligent responses to questions about uploaded PDF documents.
+A smart study assistant powered by LangChain and OpenAI that helps students understand their study materials through interactive conversations. The assistant uses RAG (Retrieval Augmented Generation) to provide context-aware responses while seamlessly blending in general knowledge when needed.
 
 ## Features
 
-- PDF document upload and processing
-- Intelligent question answering using RAG (Retrieval Augmented Generation)
-- Interactive chat interface using Streamlit
-- Context-aware responses based on document content
-- Modern and user-friendly interface
+- **Smart Context Understanding**: Automatically decides when to use document context and when to supplement with general knowledge
+- **Document Processing**: Upload and process PDF study materials
+- **Interactive Chat**: Natural conversation interface with memory of previous interactions
+- **Dynamic Response Generation**: Uses cosine similarity and LLM evaluation to ensure relevant and comprehensive answers
+- **Conversation Memory**: Maintains context across multiple questions for more coherent discussions
 
-## Prerequisites
+## Technical Details
 
-- Python 3.8+
-- OpenAI API key
+### Architecture
+
+- **Frontend**: Streamlit for the web interface
+- **Backend**: Python with LangChain for RAG implementation
+- **Embedding**: OpenAI's text embedding model for document vectorization
+- **Vector Store**: Chroma DB for efficient similarity search
+- **LLM**: OpenAI's GPT models for response generation
+
+### Smart RAG Implementation
+
+The assistant uses a sophisticated RAG system that:
+1. Retrieves relevant document chunks using similarity search
+2. Evaluates context relevance using cosine similarity
+3. Determines if the context is sufficient or needs supplementation
+4. Dynamically combines document knowledge with general knowledge when appropriate
 
 ## Setup
 
-1. Clone the repository
-2. Create and activate a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Create a `.env` file in the root directory and add your OpenAI API key:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd study-assistant
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
+Create a `.env` file with:
+```
+OPENAI_API_KEY=your_api_key_here
+```
+
+4. Run the application:
+```bash
+streamlit run app/main.py
+```
 
 ## Usage
 
-1. Start the application:
-   ```bash
-   streamlit run app/main.py
-   ```
-2. Upload a PDF document using the sidebar
-3. Ask questions about the document in the chat interface
-4. Get AI-powered responses based on the document content
+1. **Start the Application**: Launch the web interface using Streamlit
+2. **Upload Documents** (Optional): Use the sidebar to upload PDF study materials
+3. **Ask Questions**: Type your questions in the chat interface
+4. **View Responses**: The assistant will provide answers using:
+   - Document context when relevant
+   - General knowledge when needed
+   - A combination of both when appropriate
 
-## Project Structure
+## Dependencies
 
-```
-study-assistant/
-├── app/
-│   ├── main.py          # Streamlit app entry point
-│   ├── rag.py           # RAG pipeline implementation
-│   ├── utils.py         # Document processing utilities
-│   └── config.py        # Configuration settings
-├── tests/               # Unit tests
-├── requirements.txt     # Project dependencies
-└── .env                # Environment variables
-```
+- Python 3.8+
+- LangChain
+- OpenAI
+- Streamlit
+- ChromaDB
+- PyPDF2
+- python-dotenv
 
 ## Configuration
 
-The application can be configured through the following environment variables in `.env`:
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `MODEL_NAME`: OpenAI model to use (default: "gpt-4")
-- `EMBEDDING_MODEL`: Model for embeddings (default: "text-embedding-ada-002")
+Key settings can be adjusted in `config.py`:
+- Model selection
+- Similarity thresholds
+- Chunk sizes for document processing
+- Vector store settings
 
 ## Contributing
 
-Feel free to submit issues and enhancement requests!
+Contributions are welcome! Please feel free to submit pull requests or open issues for improvements and bug fixes.
+
+## License
+
+[Your chosen license]

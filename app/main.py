@@ -1,6 +1,7 @@
 import streamlit as st
 import os
-from utils import load_and_split_documents
+import time
+from utils import load_and_split_documents, create_memory
 from rag import create_vector_store, create_rag_chain
 from config import (
     OPENAI_API_KEY,
@@ -9,73 +10,137 @@ from config import (
     EMBEDDING_MODEL
 )
 from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 
-# Streamlit app
+# Initialize session state
+if "chat_chain" not in st.session_state:
+    st.session_state.chat_chain = None
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "memory" not in st.session_state:
+    st.session_state.memory = create_memory()
+if "documents_loaded" not in st.session_state:
+    st.session_state.documents_loaded = False
+
+def format_chat_history(chat_history):
+    """Format chat history for the LLM."""
+    if not chat_history:
+        return ""
+    formatted = []
+    for msg in chat_history:
+        role = "Assistant" if msg["role"] == "assistant" else "Human"
+        formatted.append(f"{role}: {msg['content']}")
+    return "\n".join(formatted)
+
+def initialize_chain():
+    """Initialize the smart chain with or without documents."""
+    llm = ChatOpenAI(
+        model=MODEL_NAME,
+        temperature=0.7,
+        openai_api_key=OPENAI_API_KEY,
+        streaming=True
+    )
+    
+    if st.session_state.documents_loaded:
+        embeddings = OpenAIEmbeddings(
+            model=EMBEDDING_MODEL,
+            openai_api_key=OPENAI_API_KEY
+        )
+        vectorstore = create_vector_store(
+            st.session_state.document_chunks,
+            embeddings
+        )
+        retriever = vectorstore.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 3}
+        )
+    else:
+        retriever = None
+    
+    st.session_state.chat_chain = create_rag_chain(
+        retriever,
+        llm,
+        st.session_state.memory
+    )
+
 def main():
-    # Set up the Streamlit app
-    st.title("Personalized Study Assistant")
-    st.sidebar.header("Upload a PDF")
+    st.title("AI Study Assistant")
+    
+    # Sidebar for document upload and settings
+    with st.sidebar:
+        st.header("Study Materials")
+        uploaded_file = st.file_uploader(
+            "Upload a document (optional)",
+            type="pdf",
+            help="Upload a PDF to get context-aware responses"
+        )
+        
+        if st.button("Clear Memory & Documents"):
+            st.session_state.memory = create_memory()
+            st.session_state.chat_history = []
+            st.session_state.chat_chain = None
+            st.session_state.documents_loaded = False
+            if "document_chunks" in st.session_state:
+                del st.session_state.document_chunks
+            st.rerun()
 
-    # Step 1: Upload a PDF file
-    uploaded_file = st.sidebar.file_uploader("Drag and drop a PDF file", type="pdf")
+        if uploaded_file:
+            with st.spinner("Processing document..."):
+                with open("temp.pdf", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                
+                st.session_state.document_chunks = load_and_split_documents("temp.pdf")
+                st.session_state.documents_loaded = True
+                initialize_chain()
+                st.success("✅ Document processed successfully!")
 
-    # Initialize session state to store the RAG chain and chat history
-    if "rag_chain" not in st.session_state:
-        st.session_state.rag_chain = None
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-
-    # Step 2: Process the uploaded file
-    if uploaded_file is not None:
-        # Save the uploaded file temporarily
-        with open("temp.pdf", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-
-        # Load and split the document
-        chunks = load_and_split_documents("temp.pdf")
-
-        # Initialize embeddings and create the vector store
-        embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL, openai_api_key=OPENAI_API_KEY)
-        vectorstore = create_vector_store(chunks, embeddings)
-
-        # Create the retriever
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-
-        # Initialize the LLM
-        llm = ChatOpenAI(model=MODEL_NAME, temperature=0.7, openai_api_key=OPENAI_API_KEY)
-
-        # Create the RAG chain and store it in session state
-        st.session_state.rag_chain = create_rag_chain(retriever, llm)
-
-        st.sidebar.success("File uploaded and processed successfully!")
-
-    # Step 3: Chat interface
-    st.header("Chat with the Study Assistant")
+    # Initialize chain if not exists
+    if st.session_state.chat_chain is None:
+        initialize_chain()
 
     # Display chat history
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.write(message["content"])
 
-    # Get user input
-    if st.session_state.rag_chain is not None:
-        user_input = st.chat_input("Ask a question about the document...")
-        if user_input:
-            # Add user input to chat history
-            st.session_state.chat_history.append({"role": "user", "content": user_input})
+    # Chat input
+    if prompt := st.chat_input("Ask me anything about your studies..."):
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Add to chat history
+        st.session_state.chat_history.append({"role": "user", "content": prompt})
 
-            # Get the response from the RAG chain
-            response = st.session_state.rag_chain.invoke(user_input)
+        # Generate and display response
+        with st.chat_message("assistant"):
+            message_placeholder = st.empty()
+            full_response = ""
 
-            # Add assistant response to chat history
-            st.session_state.chat_history.append({"role": "assistant", "content": response.content})
+            # Show typing indicator
+            message_placeholder.markdown("Typing...")
+            time.sleep(0.5)
 
-            # Rerun the app to update the chat interface
-            st.rerun()
-    else:
-        st.warning("Please upload a PDF file to get started.")
+            # Format history and prepare inputs
+            history = format_chat_history(st.session_state.chat_history[:-1])  # Exclude current prompt
+            
+            # Stream the response
+            for chunk in st.session_state.chat_chain.stream({
+                "input": prompt,
+                "history": history
+            }):
+                if "text" in chunk:
+                    full_response += chunk["text"]
+                else:
+                    full_response += chunk.get("response", "")
+                message_placeholder.markdown(full_response + "▌")
+                time.sleep(0.01)
 
-# Run the Streamlit app
+            # Show final response
+            message_placeholder.markdown(full_response)
+
+        # Add assistant's response to chat history
+        st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+
 if __name__ == "__main__":
     main()
