@@ -18,7 +18,7 @@ def main():
     st.sidebar.header("Upload a PDF")
 
     # Step 1: Upload a PDF file
-    uploaded_file = st.sidebar.file_uploader("Drag and drop a PDF file", type="pdf")
+    uploaded_file = st.sidebar.file_uploader("Drag drop a PDF file", type="pdf")
 
     # Initialize session state to store the RAG chain and chat history
     if "rag_chain" not in st.session_state:
