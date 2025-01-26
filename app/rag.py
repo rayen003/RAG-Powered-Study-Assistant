@@ -9,8 +9,7 @@ def create_vector_store(chunks, embeddings, persist_directory=PERSIST_DIRECTORY)
     """
     Create a vector store from the document chunks.
     """
-    vectorstore = Chroma.from_documents(chunks, embeddings, persist_directory=persist_directory)
-    return vectorstore
+    return Chroma.from_documents(chunks, embeddings, persist_directory=persist_directory)
 
 def create_rag_chain(retriever, llm):
     """
