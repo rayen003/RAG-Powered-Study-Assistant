@@ -10,11 +10,6 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
-def initialize_flan_t5():
-    """Initialize FLAN-T5 model and tokenizer"""
-    model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small")
-    tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
-    return model, tokenizer
 
 def load_and_split_documents(file_path, chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP):
     """
