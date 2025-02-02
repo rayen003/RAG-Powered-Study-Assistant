@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
-from app.config import OPENAI_API_KEY
+from app.config import MODEL_NAME
 from typing import List, Optional, Union, BinaryIO
 from langchain_core.output_parsers.string import StrOutputParser
 from pydantic import BaseModel, ValidationError

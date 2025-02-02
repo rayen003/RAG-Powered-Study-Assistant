@@ -5,10 +5,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers.string import StrOutputParser
 from app.templates import TEMPLATES
-from typing import Optional
 from ..config import MODEL_NAME  # Import MODEL_NAME instead of API key
 
-def multimodal_workflow(memory, question, file_input: Optional['FileInput'] = None):
+def multimodal_workflow(memory, question, file_input=None):
     llm = ChatOpenAI(model=MODEL_NAME)  # Use model name from config
 
     if file_input:

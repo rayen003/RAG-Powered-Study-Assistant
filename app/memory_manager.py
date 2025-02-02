@@ -1,12 +1,13 @@
 from langchain.memory import ConversationSummaryMemory
 from langchain_openai import ChatOpenAI
+from .config import MODEL_NAME
 
 def create_memory():
     """
     Create a conversation summary memory.
     """
     return ConversationSummaryMemory(
-        llm=ChatOpenAI(),
+        llm=ChatOpenAI(model=MODEL_NAME),
         memory_key="chat_history",
         input_key="question",
         output_key="answer",

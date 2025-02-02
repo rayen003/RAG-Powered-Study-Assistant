@@ -24,7 +24,7 @@ def main():
     if "rag_chain" not in st.session_state:
         st.session_state.rag_chain = None
     if "llm" not in st.session_state:
-        st.session_state.llm = ChatOpenAI(model=MODEL_NAME, temperature=0.7, openai_api_key=OPENAI_API_KEY)
+        st.session_state.llm = ChatOpenAI(model=MODEL_NAME, temperature=0.7)
 
     # PDF upload section
     uploaded_file = st.sidebar.file_uploader("Drag drop a PDF file", type="pdf")
@@ -39,14 +39,14 @@ def main():
         chunks = load_and_split_documents("temp.pdf")
 
         # Initialize embeddings and create the vector store
-        embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL, openai_api_key=OPENAI_API_KEY)
+        embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
         vectorstore = create_vector_store(chunks, embeddings)
 
         # Create the retriever
         retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
         # Initialize the LLM
-        llm = ChatOpenAI(model=MODEL_NAME, temperature=0.7, openai_api_key=OPENAI_API_KEY)
+        llm = ChatOpenAI(model=MODEL_NAME, temperature=0.7)
 
         # Create the RAG chain and store it in session state
         st.session_state.rag_chain = create_rag_chain(retriever, llm)
